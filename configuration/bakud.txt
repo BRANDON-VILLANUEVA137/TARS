@@ -1,0 +1,100 @@
+import google.generativeai as genai
+import os
+import pyttsx3
+from configuration.config import GEMINI_API_KEY  # Importa la clave desde config.py
+
+# Configurar la API Key de Gemini
+genai.configure(api_key=GEMINI_API_KEY)
+
+# Configurar la voz
+engine = pyttsx3.init()
+engine.setProperty("rate", 170)  # Velocidad de la voz
+engine.setProperty("voice", "femenina")  # Cambia según tu sistema
+
+# Función de chat con Rem
+def chat_rem():
+    print("🌸 Chat con Rem (Gemini) iniciado. Escribe 'salir' para terminar. 🌸\n")
+    
+    while True:
+        user_input = input("Tú: ")
+        if user_input.lower() == "salir":
+            print("Rem: ¡Cuídate! 🌸")
+            engine.stop()  # 🔹 Detiene cualquier síntesis de voz en curso
+            break
+        
+        # Enviar mensaje a Gemini
+        response = genai.GenerativeModel("gemini-pro").generate_content(user_input)
+        respuesta_texto = response.text if response else "Lo siento, no entendí."
+
+        print(f"Rem: {respuesta_texto}")
+        
+        # Convertir texto en voz
+        engine.say(respuesta_texto)
+        engine.runAndWait()
+
+# Ejecutar el chat
+if __name__ == "__main__":
+    chat_rem()
+
+-------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------
+Aqui comienza el codigo final de Rem
+-------------------------------------------------------------------------------------------------------------------
+import google.generativeai as genai
+from elevenlabs.client import ElevenLabs
+from configuration.config import ELEVEN_API_KEY, GEMINI_API_KEY  # claves API desde el config.py
+
+# La API de Gemini
+genai.configure(api_key=GEMINI_API_KEY)
+
+#Los ajustes de  Eleven Labs y la API :V 
+client = ElevenLabs(api_key=ELEVEN_API_KEY)
+voice_id = "UDxknsZoy6tGrvyy9uN9"  # ID de la voz de Rem es copiar y pegar
+
+#Aqui le asigne el rol para REM IA
+contexto = "Eres Rem, una asistente cariñosa y dulce. Hablas de manera tierna y amigable, usando emojis y expresiones amables. Siempre tratas de hacer sentir bien a quien te habla. Respondes en español."
+
+# Inicializa el modelo de gemini con el rol que le di
+modelo = genai.GenerativeModel("gemini-pro")
+chat = modelo.start_chat(history=[{"role": "user", "parts": [{"text": contexto}]}])
+
+# Funcion para convertir texto a voz con Eleven Labs
+def speak_with_elevenlabs(text):
+    audio_generator = client.text_to_speech.convert(
+        voice_id=voice_id,
+        text=text,
+        model_id="eleven_multilingual_v2", # Importante para que suene bien en español si esto suena a gringo 
+        voice_settings={
+            "stability": 0.50,
+            "similarity_boost": 0.75,
+            "style_exaggeration": 0.23,
+            "use_speaker_boost": True
+        }
+    )
+    
+    # Reproduce el audio con la bocina o sin importar audio (Estudiar caso :V)
+    from elevenlabs import play
+    play(audio_generator)
+
+# Función de ecribir con Rem
+def chat_rem():
+    print("🌸 Chat con Rem (Gemini + Eleven Labs) iniciado. Escribe 'salir' para terminar. 🌸\n")
+
+    while True:
+        user_input = input("Tú: ")
+        if user_input.lower() == "salir":
+            print("Rem: ¡Cuídate mucho! 🌸")
+            speak_with_elevenlabs("¡Cuídate mucho! Nos vemos pronto.")
+            break
+
+        # Enviar mensaje a Gemini con contexto y si no entiede ella
+        response = chat.send_message(user_input)
+        respuesta_texto = response.text if response else "Lo siento, no entendí."
+
+        print(f"Rem: {respuesta_texto}")
+        speak_with_elevenlabs(respuesta_texto)
+
+# Ejecuta el programa
+if __name__ == "__main__":
+    chat_rem()
